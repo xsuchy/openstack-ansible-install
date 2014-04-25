@@ -1,0 +1,48 @@
+---
+# http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-passwords.html
+
+# passwords generated using: openssl rand -hex 10
+#
+#Database password (no variable used) 	Root password for the database
+DBPASSWORD: 272837210aab518ad47a
+#KEYSTONE_DBPASS 	Database password of Identity service
+KEYSTONE_DBPASS: a84826f6094554e451ae
+#DEMO_PASS 	Password of user demo
+DEMO_PASS: 7be3484a42fb31a292d2
+#ADMIN_PASS 	Password of user admin
+ADMIN_PASS: 743b12e76412acb4bdc9
+#GLANCE_DBPASS 	Database password for Image Service
+GLANCE_DBPASS: ff482e95d10eb88e1967
+#GLANCE_PASS 	Password of Image Service user glance
+GLANCE_PASS: f7f8da2392013cfdc384
+#NOVA_DBPASS 	Database password for Compute service
+NOVA_DBPASS: 748c90810443c77bde72
+#NOVA_PASS 	Password of Compute service user nova
+NOVA_PASS: 584134ad052be0d28d21
+#DASH_DBPASS 	Database password for the dashboard
+DASH_DBPASS: 6903d8b9650e4bee790b
+#CINDER_DBPASS 	Database password for the Block Storage service
+CINDER_DBPASS: a8a4b2b259fd75d18fa3
+#CINDER_PASS 	Password of Block Storage service user cinder
+CINDER_PASS: cdb56c5dbe1408576f09
+#NEUTRON_DBPASS 	Database password for the Networking service
+NEUTRON_DBPASS: 403674d24f73e391425e
+#NEUTRON_PASS 	Password of Networking service user neutron
+NEUTRON_PASS: 04421fbf4057cfa0aa7a
+#HEAT_DBPASS 	Database password for the Orchestration service
+HEAT_DBPASS: 6e1c8f51318fb30880b0
+#HEAT_PASS 	Password of Orchestration service user heat
+HEAT_PASS: f4be94473aee0b177a77
+#CEILOMETER_DBPASS 	Database password for the Telemetry service
+CEILOMETER_DBPASS: 55eb1012492d1f4e91b1
+#CEILOMETER_PASS 	Password of Telemetry service user ceilometer
+CEILOMETER_PASS: b2336a47ac4a83566d26
+#TROVE_DBPASS 	Database password of Database service
+TROVE_DBPASS: 2f4212f9f7bf890dbeee
+#TROVE_PASS 	Password of Database Service user trove
+TROVE_PASS: 88ee17b6eb5efb880d8a
+
+# http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-install.html
+# Define an authorization token to use as a shared secret between the Identity
+# Service and other OpenStack services
+ADMIN_TOKEN: 487089b7d994017258c2

@@ -1,0 +1,98 @@
+---
+- name: deploy Open Stack controler
+  hosts: 192.168.122.68
+  user: root
+  sudo: yes
+  gather_facts: True
+  vars:
+   - files: files/
+   - private: private/
+
+  vars_files:
+   - vars/os.yml
+   - vars/ip.yml
+
+  tasks:
+#  - name: Set the hostname
+#    action: shell hostname os-controler
+
+  - name: install core pkgs
+    action: yum state=present pkg={{ item }}
+    with_items:
+    - libselinux-python
+
+  - name: disable selinux
+    action: selinux policy=targeted state=permissive
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-networking.html
+  #- service: name=NetworkManager state=stopped enabled=no
+  - service: name=network state=started enabled=yes
+  #- service: name=firewalld state=stopped enabled=no
+  - service: name=iptables state=started enabled=yes
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-ntp.html
+  - service: name=ntpd state=started enabled=yes
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-database-controller.html
+  - name: install mysql packages
+    action: yum state=present pkg={{ item }}
+    with_items:
+    - mysql-server
+    - MySQL-python
+  - lineinfile: dest=/etc/my.cnf regexp="^bind-address" insertafter="^\[mysqld\]" line="bind-address = {{ controller_private_ip }}"
+  - lineinfile: dest=/etc/my.cnf regexp="^default-storage-engine" insertafter="^\[mysqld\]" line="default-storage-engine = innodb"
+  - lineinfile: dest=/etc/my.cnf regexp="^collation-server" insertafter="^\[mysqld\]" line="collation-server = utf8_general_ci"
+  - lineinfile: dest=/etc/my.cnf regexp="^init-connect" insertafter="^\[mysqld\]" line="init-connect = 'SET NAMES utf8'"
+  - lineinfile: dest=/etc/my.cnf regexp="^character-set-server " insertafter="^\[mysqld\]" line="character-set-server = utf8"
+  - service: name=mysqld state=started enabled=yes
+    # 'localhost' needs to be the last item for idempotency, see
+    # http://ansible.cc/docs/modules.html#mysql-user
+  - name: update mysql root password for all root accounts
+    mysql_user: name=root host={{ item }} password={{ DBPASSWORD }}
+    with_items:
+      - "{{ controller_private_ip }}"
+      - 127.0.0.1
+      - ::1
+      - localhost
+  - name: copy .my.cnf file with root password credentials
+    template: src={{ files }}/my.cnf dest=/root/.my.cnf owner=root mode=0600
+  - name: delete anonymous MySQL server user for $server_hostname
+    action: mysql_user user="" host="{{ controller_private_ip }}" state="absent"
+  - name: delete anonymous MySQL server user for localhost
+    action: mysql_user user="" state="absent"
+  - name: remove the MySQL test database
+    action: mysql_db db=test state=absent
+
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-packages.html
+  - yum: state=present name=http://repos.fedorapeople.org/repos/openstack/openstack-icehouse/rdo-release-icehouse-2.noarch.rpm
+  - yum: state=present name=http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+  - yum: state=present name=openstack-utils
+  - yum: state=present name=openstack-selinux
+  - yum: name=* state=latest
+
+  # here docs recommend reboot, I will just skip it
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-queue.html
+  - yum: name="qpid-cpp-server" state=present
+  - lineinfile: dest=/etc/qpidd.conf regexp="^auth= " insertafter="^#auth" line="auth=no"
+  # TODO harden qpid installation
+  - service: name=qpidd state=started enabled=yes
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-install.html
+  - name: install identity service
+    action: yum state=present pkg={{ item }}
+    with_items:
+    - openstack-keystone
+    - python-keystoneclient
+  - command: openstack-config --set /etc/keystone/keystone.conf database connection mysql://keystone:{{ KEYSTONE_DBPASS }}@localhost/keystone
+  - mysql_db: name=keystone state=present
+  - mysql_user: name=keystone host=localhost password={{ KEYSTONE_DBPASS }} priv='keystone.*:ALL'
+  - mysql_user: name=keystone host="%" password={{ KEYSTONE_DBPASS }} priv='keystone:ALL'
+  - command: su -s /bin/sh -c "keystone-manage db_sync" keystone
+  - command: openstack-config --set /etc/keystone/keystone.conf DEFAULT admin_token {{ ADMIN_TOKEN }}
+  - command: keystone-manage pki_setup --keystone-user keystone --keystone-group keystone
+  - file: path=/etc/keystone/ssl recurse=yes owner=keystone group=keystone
+  - command: chmod -R o-rwx /etc/keystone/ssl
+  - service: name=openstack-keystone state=started enabled=yes
+  - shell: echo '@hourly /usr/bin/keystone-manage token_flush >/var/log/keystone/keystone-tokenflush.log 2>&1' > /var/spool/cron/root
