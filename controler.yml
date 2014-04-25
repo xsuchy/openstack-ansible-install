@@ -103,12 +103,29 @@
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-users.html
   # instead of exported vars use: --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }}
   # FIXME - I should check 'keystone user-list |grep admin' etc. as those operation are not idempotent
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-create --name=admin --pass={{ ADMIN_PASS }} --email={{ ADMIN_EMAIL }} || true
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} role-create --name=admin || true
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=admin --description="Admin Tenant" || true
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --tenant=admin --role=admin  || true
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --role=_member_ --tenant=admin || true
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-create --name=admin --pass={{ ADMIN_PASS }} --email={{ ADMIN_EMAIL }}
+    ignore_errors: True
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} role-create --name=admin
+    ignore_errors: True
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=admin --description="Admin Tenant"
+    ignore_errors: True
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --tenant=admin --role=admin
+    ignore_errors: True
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --role=_member_ --tenant=admin
+    ignore_errors: True
   # SKIPPED - creating normal user, FIXME later by real users
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=service --description="Service Tenant" || true
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=service --description="Service Tenant"
+    ignore_errors: True
 
 
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-services.html
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} service-list | grep ' identity ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} service-create --name=keystone --type=identity --description="OpenStack Identity"
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} service-list | awk '/ identity / {print $2}'
+    register: SERVICE_ID
+  - debug: var=SERVICE_ID
+  # FIXME I had to run this step manually it does not work, do not know why
+  #- shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} endpoint-list | grep {{ SERVICE_ID|stdout }} || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} endpoint-create --service-id={{ SERVICE_ID|stdout }} --publicurl=http://controller:5000/v2.0 --internalurl=http://controller:5000/v2.0 --adminurl={{ endpoint }}
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-verify.html
+  - command: keystone --os-username=admin --os-password={{ ADMIN_PASS }} --os-auth-url={{ endpoint }} token-get
+  - command: keystone --os-username=admin --os-password={{ ADMIN_PASS }} --os-tenant-name=admin --os-auth-url={{endpoint}} token-get
