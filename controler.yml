@@ -129,3 +129,17 @@
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-verify.html
   - command: keystone --os-username=admin --os-password={{ ADMIN_PASS }} --os-auth-url={{ endpoint }} token-get
   - command: keystone --os-username=admin --os-password={{ ADMIN_PASS }} --os-tenant-name=admin --os-auth-url={{endpoint}} token-get
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/install_clients.html
+  - name: install client packages
+    action: yum state=present pkg={{ item }}
+    with_items:
+    - python-ceilometerclient
+    - python-cinderclient
+    - python-glanceclient
+    - python-heatclient
+    - python-keystoneclient
+    - python-neutronclient
+    - python-novaclient
+    - python-swiftclient
+    - python-troveclient
