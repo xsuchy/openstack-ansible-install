@@ -7,6 +7,7 @@
   vars:
    - files: files/
    - private: private/
+   - endpoint: http://controller:35357/v2.0
 
   vars_files:
    - vars/os.yml
@@ -98,3 +99,16 @@
   - command: chmod -R o-rwx /etc/keystone/ssl
   - service: name=openstack-keystone state=started enabled=yes
   - shell: echo '@hourly /usr/bin/keystone-manage token_flush >/var/log/keystone/keystone-tokenflush.log 2>&1' > /var/spool/cron/root
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-users.html
+  # instead of exported vars use: --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }}
+  # FIXME - I should check 'keystone user-list |grep admin' etc. as those operation are not idempotent
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-create --name=admin --pass={{ ADMIN_PASS }} --email={{ ADMIN_EMAIL }} || true
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} role-create --name=admin || true
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=admin --description="Admin Tenant" || true
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --tenant=admin --role=admin  || true
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --role=_member_ --tenant=admin || true
+  # SKIPPED - creating normal user, FIXME later by real users
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=service --description="Service Tenant" || true
+
+

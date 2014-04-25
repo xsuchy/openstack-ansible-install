@@ -46,3 +46,6 @@ TROVE_PASS: 88ee17b6eb5efb880d8a
 # Define an authorization token to use as a shared secret between the Identity
 # Service and other OpenStack services
 ADMIN_TOKEN: 487089b7d994017258c2
+
+# http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-users.html
+ADMIN_EMAIL: root@localhost
