@@ -24,6 +24,8 @@
   - name: disable selinux
     action: selinux policy=targeted state=permissive
 
+  - template: src={{ files }}/hosts dest=/etc/hosts owner=root mode=0644
+
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-networking.html
   #- service: name=NetworkManager state=stopped enabled=no
   - service: name=network state=started enabled=yes
@@ -39,7 +41,7 @@
     with_items:
     - mysql-server
     - MySQL-python
-  - lineinfile: dest=/etc/my.cnf regexp="^bind-address" insertafter="^\[mysqld\]" line="bind-address = {{ controller_private_ip }}"
+  - lineinfile: dest=/etc/my.cnf regexp="^bind-address" insertafter="^\[mysqld\]" line="bind-address = {{ controller_public_ip }}"
   - lineinfile: dest=/etc/my.cnf regexp="^default-storage-engine" insertafter="^\[mysqld\]" line="default-storage-engine = innodb"
   - lineinfile: dest=/etc/my.cnf regexp="^collation-server" insertafter="^\[mysqld\]" line="collation-server = utf8_general_ci"
   - lineinfile: dest=/etc/my.cnf regexp="^init-connect" insertafter="^\[mysqld\]" line="init-connect = 'SET NAMES utf8'"
@@ -50,14 +52,14 @@
   - name: update mysql root password for all root accounts
     mysql_user: name=root host={{ item }} password={{ DBPASSWORD }}
     with_items:
-      - "{{ controller_private_ip }}"
+      - "{{ controller_public_ip }}"
       - 127.0.0.1
       - ::1
       - localhost
   - name: copy .my.cnf file with root password credentials
     template: src={{ files }}/my.cnf dest=/root/.my.cnf owner=root mode=0600
   - name: delete anonymous MySQL server user for $server_hostname
-    action: mysql_user user="" host="{{ controller_private_ip }}" state="absent"
+    action: mysql_user user="" host="{{ controller_public_ip }}" state="absent"
   - name: delete anonymous MySQL server user for localhost
     action: mysql_user user="" state="absent"
   - name: remove the MySQL test database
