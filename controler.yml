@@ -187,3 +187,6 @@
   - service: name=openstack-glance-api state=started enabled=yes
   - service: name=openstack-glance-registry state=started enabled=yes
 
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/glance-verify.html
+  - get_url: url=http://cdn.download.cirros-cloud.net/0.3.2/cirros-0.3.2-x86_64-disk.img dest=/root/cirros-0.3.2-x86_64-disk.img mode=0440
+  - shell: source /root/admin-openrc.sh && glance image-list |grep "cirros-0.3.2-x86_64" || glance image-create --name=cirros-0.3.2-x86_64 --disk-format=qcow2 --container-format=bare --is-public=True < /root/cirros-0.3.2-x86_64-disk.img
