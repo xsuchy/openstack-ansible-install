@@ -143,3 +143,7 @@
     - python-novaclient
     - python-swiftclient
     - python-troveclient
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/cli_openrc.html
+  - template: src={{ files }}/admin-openrc.sh dest=/root/ owner=root mode=0600
+
