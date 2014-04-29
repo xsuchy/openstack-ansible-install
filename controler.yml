@@ -103,19 +103,13 @@
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-users.html
   # instead of exported vars use: --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }}
   # FIXME - I should check 'keystone user-list |grep admin' etc. as those operation are not idempotent
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-create --name=admin --pass={{ ADMIN_PASS }} --email={{ ADMIN_EMAIL }}
-    ignore_errors: True
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} role-create --name=admin
-    ignore_errors: True
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=admin --description="Admin Tenant"
-    ignore_errors: True
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --tenant=admin --role=admin
-    ignore_errors: True
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --role=_member_ --tenant=admin
-    ignore_errors: True
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-list | grep ' admin ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-create --name=admin --pass={{ ADMIN_PASS }} --email={{ ADMIN_EMAIL }}
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} role-list | grep ' admin ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} role-create --name=admin
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-list | grep ' admin ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=admin --description="Admin Tenant"
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-list --user=admin --tenant=admin | grep ' admin ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --tenant=admin --role=admin
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-list --user=admin --tenant=admin | grep ' _member_ ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-role-add --user=admin --role=_member_ --tenant=admin
   # SKIPPED - creating normal user, FIXME later by real users
-  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=service --description="Service Tenant"
-    ignore_errors: True
+  - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-list | grep ' service ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=service --description="Service Tenant"
 
 
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-services.html
@@ -228,7 +222,7 @@
   - shell: source /root/admin-openrc.sh && keystone service-list | grep ' compute ' || keystone service-create --name=nova --type=compute --description="OpenStack Compute"
   - shell: source /root/admin-openrc.sh && keystone service-list | awk '/ compute / {print $2}'
     register: SERVICE_ID
-  - shell: source /root/admin-openrc.sh && keystone endpoint-list | grep {{ SERVICE_ID.stdout }} || keystone endpoint-create --service-id={{ SERVICE_ID.stdout }} --publicurl='http://controller:8774/v2/%\(tenant_id)s' --internalurl='http://controller:8774/v2/%(tenant_id)s' --adminurl='http://controller:8774/v2/%(tenant_id)s'
+  - shell: source /root/admin-openrc.sh && keystone endpoint-list | grep {{ SERVICE_ID.stdout }} || keystone endpoint-create --service-id={{ SERVICE_ID.stdout }} --publicurl='http://controller:8774/v2/%(tenant_id)s' --internalurl='http://controller:8774/v2/%(tenant_id)s' --adminurl='http://controller:8774/v2/%(tenant_id)s'
   - service: name={{ item }} state=started enabled=yes
     with_items:
     - openstack-nova-api
