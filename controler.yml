@@ -199,6 +199,7 @@
   - command: openstack-config --set /etc/nova/nova.conf DEFAULT my_ip {{ controller_private_ip }}
   - command: openstack-config --set /etc/nova/nova.conf DEFAULT vncserver_listen {{ controller_private_ip }}
   - command: openstack-config --set /etc/nova/nova.conf DEFAULT vncserver_proxyclient_address {{ controller_private_ip }}
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT glance_api_servers controller:9292
   - mysql_db: name=nova state=present
   - mysql_user: name=nova host=localhost password={{ NOVA_DBPASS }} priv='nova.*:ALL'
   - mysql_user: name=nova host="%" password={{ NOVA_DBPASS }} priv='nova.*:ALL'
