@@ -265,3 +265,20 @@
     - messagebus
     - openstack-nova-compute
 
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/neutron-ml2-controller-node.html
+  - mysql_db: name=neutron state=present
+  - mysql_user: name=neutron host=localhost password={{ NEUTRON_DBPASS }} priv='neutron.*:ALL'
+  - mysql_user: name=neutron host="%" password={{ NEUTRON_DBPASS }} priv='neutron.*:ALL'
+  - shell: source /root/admin-openrc.sh && keystone user-list | grep ' neutron ' || keystone user-create --name neutron --pass {{NEUTRON_PASS}} --email root@localhost
+  - shell: source /root/admin-openrc.sh && user-role-list --user neutron --tenant service | grep ' admin ' || keystone user-role-add --user neutron --tenant service --role admin
+  - shell: source /root/admin-openrc.sh && keystone service-list | grep ' network ' || keystone service-create --name neutron --type network --description "OpenStack Networking"
+  - shell: source /root/admin-openrc.sh && keystone service-list | awk '/ network / {print $2}'
+    register: SERVICE_ID
+  - shell: source /root/admin-openrc.sh && keystone endpoint-list | grep {{ SERVICE_ID.stdout }} || keystone endpoint-create --service-id {{ SERVICE_ID.stdout }} --publicurl http://controller:9696 --adminurl http://controller:9696 --internalurl http://controller:9696
+  - action: yum state=present pkg={{ item }}
+    with_items:
+    - openstack-neutron
+    - openstack-neutron-ml2
+    - python-neutronclient
+  # FIXME - continue with the same chapter
+
