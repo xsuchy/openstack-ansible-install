@@ -21,6 +21,7 @@
     action: yum state=present pkg={{ item }}
     with_items:
     - libselinux-python
+    - ntp
 
   - name: disable selinux
     action: selinux policy=targeted state=permissive
