@@ -102,7 +102,6 @@
 
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-users.html
   # instead of exported vars use: --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }}
-  # FIXME - I should check 'keystone user-list |grep admin' etc. as those operation are not idempotent
   - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-list | grep ' admin ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} user-create --name=admin --pass={{ ADMIN_PASS }} --email={{ ADMIN_EMAIL }}
   - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} role-list | grep ' admin ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} role-create --name=admin
   - shell: keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-list | grep ' admin ' || keystone --os-token {{ ADMIN_TOKEN }} --os-endpoint {{ endpoint }} tenant-create --name=admin --description="Admin Tenant"
@@ -153,11 +152,8 @@
   - mysql_user: name=glance host=localhost password={{ GLANCE_DBPASS }} priv='glance.*:ALL'
   - mysql_user: name=glance host="%" password={{ GLANCE_DBPASS }} priv='glance.*:ALL'
   - command: su -s /bin/sh -c "glance-manage db_sync" glance
-  # FIXME - I should check 'keystone user-list |grep admin' etc. as those operation are not idempotent
-  - shell: source /root/admin-openrc.sh && keystone user-create --name=glance --pass={{GLANCE_PASS}} --email=root@localhost
-    ignore_errors: True
-  - shell: source /root/admin-openrc.sh && keystone user-role-add --user=glance --tenant=service --role=admin
-    ignore_errors: True
+  - shell: source /root/admin-openrc.sh && keystone user-list | grep ' glance ' || keystone user-create --name=glance --pass={{GLANCE_PASS}} --email=root@localhost
+  - shell: source /root/admin-openrc.sh && keystone user-role-list --user=glance --tenant=service | grep ' admin ' || keystone user-role-add --user=glance --tenant=service --role=admin
   - command: openstack-config --set /etc/glance/glance-api.conf keystone_authtoken auth_uri http://controller:5000
   - command: openstack-config --set /etc/glance/glance-api.conf keystone_authtoken auth_host controller
   - command: openstack-config --set /etc/glance/glance-api.conf keystone_authtoken auth_port 35357
@@ -206,11 +202,8 @@
   - mysql_user: name=nova host=localhost password={{ NOVA_DBPASS }} priv='nova.*:ALL'
   - mysql_user: name=nova host="%" password={{ NOVA_DBPASS }} priv='nova.*:ALL'
   - command: su -s /bin/sh -c "nova-manage db sync" nova
-  # FIXME - I should check 'keystone user-list |grep admin' etc. as those operation are not idempotent
-  - shell: source /root/admin-openrc.sh && keystone user-create --name=nova --pass={{NOVA_PASS}} --email=root@localhost
-    ignore_errors: True
-  - shell: source /root/admin-openrc.sh && keystone user-role-add --user=nova --tenant=service --role=admin
-    ignore_errors: True
+  - shell: source /root/admin-openrc.sh && keystone user-list | grep ' nova ' || keystone user-create --name=nova --pass={{NOVA_PASS}} --email=root@localhost
+  - shell: source /root/admin-openrc.sh && keystone user-role-list --user=nova --tenant=service | grep ' admin ' || keystone user-role-add --user=nova --tenant=service --role=admin
   - command: openstack-config --set /etc/nova/nova.conf DEFAULT auth_strategy keystone
   - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken auth_uri http://controller:5000
   - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken auth_host controller
