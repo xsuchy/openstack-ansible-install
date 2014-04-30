@@ -234,3 +234,34 @@
     - openstack-nova-conductor
     - openstack-nova-novncproxy
   - shell: source /root/admin-openrc.sh && nova image-list
+
+  # FIXME do this on others compute nodes as well
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/nova-compute.html
+  - action: yum state=present pkg=openstack-nova-compute
+  - command: openstack-config --set /etc/nova/nova.conf database connection mysql://nova:{{NOVA_DBPASS}}@controller/nova
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT auth_strategy keystone
+  - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken auth_uri http://controller:5000
+  - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken auth_host controller
+  - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken auth_protocol http
+  - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken auth_port 35357
+  - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken admin_user nova
+  - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken admin_tenant_name service
+  - command: openstack-config --set /etc/nova/nova.conf keystone_authtoken admin_password {{NOVA_PASS}}
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT rpc_backend qpid
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT qpid_hostname controller
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT my_ip {{ compute1_private_ip }}
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT vnc_enabled True
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT vncserver_listen 0.0.0.0
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT vncserver_proxyclient_address {{ compute1_private_ip }}
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT novncproxy_base_url http://controller:6080/vnc_auto.html
+  - command: openstack-config --set /etc/nova/nova.conf DEFAULT glance_host controller
+  # FIXME if 
+  # egrep -c '(vmx|svm)' /proc/cpuinfo
+  # returns 0 then run
+  # openstack-config --set /etc/nova/nova.conf libvirt virt_type qemu
+  - service: name={{ item }} state=started enabled=yes
+    with_items:
+    - libvirtd
+    - messagebus
+    - openstack-nova-compute
+
