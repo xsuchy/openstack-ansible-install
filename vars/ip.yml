@@ -2,8 +2,8 @@
 controller_public_ip: 192.168.122.68
 controller_private_ip: 10.0.0.11
 
-network_public_ip: 192.168.122.69
-network_private_ip: 10.0.0.21
+network_public_ip: 192.168.122.68
+network_private_ip: 10.0.0.11
 
 compute1_public_ip: 192.168.122.70
 compute1_private_ip: 10.0.0.31
