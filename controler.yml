@@ -17,8 +17,6 @@
 #  - name: Set the hostname
 #    action: shell hostname os-controler
 
-  # FIXME - set up networking
-
   - name: install core pkgs
     action: yum state=present pkg={{ item }}
     with_items:
@@ -35,6 +33,13 @@
   - service: name=network state=started enabled=yes
   #- service: name=firewalld state=stopped enabled=no
   - service: name=iptables state=started enabled=yes
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-neutron-networking-controller-node.html
+  - lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth1 regexp="^ONBOOT=" line="ONBOOT=yes"
+  - lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth1 regexp="^NETMASK=" line="NETMASK=255.255.255.0"
+  - lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth1 regexp="^IPADDR=" line="IPADDR={{controller_private_ip}}"
+  - lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth1 regexp="BOOTPROTO=" line="BOOTPROTO=none"
+  # FIXME notify network service restart
 
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-ntp.html
   - service: name=ntpd state=started enabled=yes
