@@ -33,14 +33,22 @@ NEUTRON_PASS: 04421fbf4057cfa0aa7a
 HEAT_DBPASS: 6e1c8f51318fb30880b0
 #HEAT_PASS 	Password of Orchestration service user heat
 HEAT_PASS: f4be94473aee0b177a77
+# The encryption key to use for authentication info in database
+HEAT_AUTH_ENC_KEY: b94bc3c3f731277ac83f
 #CEILOMETER_DBPASS 	Database password for the Telemetry service
 CEILOMETER_DBPASS: 55eb1012492d1f4e91b1
 #CEILOMETER_PASS 	Password of Telemetry service user ceilometer
 CEILOMETER_PASS: b2336a47ac4a83566d26
+# Secret key for signing metering messages.
+CEILOMETER_SECRET: 29b8156881a5816a281b
 #TROVE_DBPASS 	Database password of Database service
 TROVE_DBPASS: 2f4212f9f7bf890dbeee
 #TROVE_PASS 	Password of Database Service user trove
 TROVE_PASS: 88ee17b6eb5efb880d8a
+# The password to use for the Swift to authenticate with Keystone
+SWIFT_PASS: 1f545cc34651b26f61c5
+# Shared secret for Swift
+SWIFT_HASH: 1b85834d998d55fab8c3
 
 # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-install.html
 # Define an authorization token to use as a shared secret between the Identity
@@ -49,3 +57,9 @@ ADMIN_TOKEN: 487089b7d994017258c2
 
 # http://docs.openstack.org/trunk/install-guide/install/yum/content/keystone-users.html
 ADMIN_EMAIL: root@localhost
+
+# The password for the NSS certificate database of the AMQP service
+CONFIG_AMQP_NSS_CERTDB_PW: 461005856e4c4d85b07d6002fef96234
+
+# Password for user authentication
+CONFIG_AMQP_AUTH_PASSWORD: 8947acd9e2114355
