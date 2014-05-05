@@ -1,0 +1,94 @@
+---
+- name: deploy Open Stack controler
+  hosts: 192.168.122.68
+  user: root
+  sudo: yes
+  gather_facts: True
+  vars:
+   - files: files/
+   - private: private/
+   - endpoint: http://controller:35357/v2.0
+
+  vars_files:
+   - vars/os.yml
+   - vars/ip.yml
+
+  tasks:
+#  - name: Set the hostname
+#    action: shell hostname os-controler
+
+  - name: install core pkgs
+    action: yum state=present pkg={{ item }}
+    with_items:
+    - libselinux-python
+    - ntp
+
+  - name: disable selinux
+    action: selinux policy=targeted state=permissive
+
+  - template: src={{ files }}/hosts dest=/etc/hosts owner=root mode=0644
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-networking.html
+  #- service: name=NetworkManager state=stopped enabled=no
+  - service: name=network state=started enabled=yes
+  #- service: name=firewalld state=stopped enabled=no
+  - service: name=iptables state=started enabled=yes
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-neutron-networking-controller-node.html
+  - lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth1 regexp="^ONBOOT=" line="ONBOOT=yes"
+  - lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth1 regexp="^NETMASK=" line="NETMASK=255.255.255.0"
+  - lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth1 regexp="^IPADDR=" line="IPADDR={{controller_private_ip}}"
+  - lineinfile: dest=/etc/sysconfig/network-scripts/ifcfg-eth1 regexp="BOOTPROTO=" line="BOOTPROTO=none"
+  # FIXME notify network service restart
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-ntp.html
+  - service: name=ntpd state=started enabled=yes
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/basics-database-controller.html
+  - name: install mysql packages
+    action: yum state=present pkg={{ item }}
+    with_items:
+    - mysql-server
+    - MySQL-python
+  - lineinfile: dest=/etc/my.cnf regexp="^bind-address" insertafter="^\[mysqld\]" line="bind-address = {{ controller_public_ip }}"
+  - lineinfile: dest=/etc/my.cnf regexp="^default-storage-engine" insertafter="^\[mysqld\]" line="default-storage-engine = innodb"
+  - lineinfile: dest=/etc/my.cnf regexp="^collation-server" insertafter="^\[mysqld\]" line="collation-server = utf8_general_ci"
+  - lineinfile: dest=/etc/my.cnf regexp="^init-connect" insertafter="^\[mysqld\]" line="init-connect = 'SET NAMES utf8'"
+  - lineinfile: dest=/etc/my.cnf regexp="^character-set-server " insertafter="^\[mysqld\]" line="character-set-server = utf8"
+  - service: name=mysqld state=started enabled=yes
+    # 'localhost' needs to be the last item for idempotency, see
+    # http://ansible.cc/docs/modules.html#mysql-user
+  - name: update mysql root password for all root accounts
+    mysql_user: name=root host={{ item }} password={{ DBPASSWORD }}
+    with_items:
+      - "{{ controller_public_ip }}"
+      - 127.0.0.1
+      - ::1
+      - localhost
+  - name: copy .my.cnf file with root password credentials
+    template: src={{ files }}/my.cnf dest=/root/.my.cnf owner=root mode=0600
+  - name: delete anonymous MySQL server user for $server_hostname
+    action: mysql_user user="" host="{{ controller_public_ip }}" state="absent"
+  - name: delete anonymous MySQL server user for localhost
+    action: mysql_user user="" state="absent"
+  - name: remove the MySQL test database
+    action: mysql_db db=test state=absent
+
+  # http://openstack.redhat.com/Quickstart
+  - yum: state=present name=http://rdo.fedorapeople.org/rdo-release.rpm
+  - yum: state=present name=http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+  - yum: state=present name=openstack-utils
+  - yum: state=present name=openstack-selinux
+  - yum: name=* state=latest
+
+  - template: src={{ files }}/packstack-answers.txt dest=/root/ owner=root mode=0600
+  - command: packstack --answerfile=packstack-answers.txt
+
+
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/glance-verify.html
+  - get_url: url=http://cdn.download.cirros-cloud.net/0.3.2/cirros-0.3.2-x86_64-disk.img dest=/root/cirros-0.3.2-x86_64-disk.img mode=0440
+  - shell: source /root/admin-openrc.sh && glance image-list |grep "cirros-0.3.2-x86_64" || glance image-create --name=cirros-0.3.2-x86_64 --disk-format=qcow2 --container-format=bare --is-public=True < /root/cirros-0.3.2-x86_64-disk.img
+
+  - shell: source /root/admin-openrc.sh && nova image-list
+
+
