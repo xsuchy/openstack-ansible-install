@@ -79,10 +79,11 @@
   - yum: state=present name=http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
   - yum: state=present name=openstack-utils
   - yum: state=present name=openstack-selinux
+  - yum: state=present name=openstack-packstack
   - yum: name=* state=latest
 
   - template: src={{ files }}/packstack-answers.txt dest=/root/ owner=root mode=0600
-  - command: packstack --answerfile=packstack-answers.txt
+  - command: packstack --answer-file=/root/packstack-answers.txt
 
 
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/glance-verify.html
