@@ -337,6 +337,7 @@
     - openstack-nova-conductor
   - service: name=neutron-server state=started enabled=yes
 
-
+  # http://docs.openstack.org/trunk/install-guide/install/yum/content/neutron-ml2-network-node.html
+  # 
   # FIXME - continue with the same chapter
 
