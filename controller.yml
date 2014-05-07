@@ -54,9 +54,9 @@
   - yum: state=present name=openstack-packstack
   - yum: name=* state=latest
 
-  - template: src={{ files }}/packstack-answers.txt dest=/root/ owner=root mode=0600
+  - template: src={{ files }}/packstack-controller-answers.txt dest=/root/ owner=root mode=0600
   - authorized_key: user=root key="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA4psdzreoSp8aQfrZtfNSDqPsJNFXiTmmu1QSo7ToCVI06bEH+Sjtynkkno1V/cGGRpD3GEdjcPgFeGOwXol1RcmxV9pe8IuIsnlLpykJoSxV93jJJ34IXqPAop5VMH0rdVOyRBHdcYORVcO4PTqmKHFeLdFDiqNUwqKVGx1nL64fUL0sVafpsn4ORWoD6YU6Jk8P0k/20fAu+XpEBnYkOsxQoUbaAF5GPw0UdPjF48IB9bTJDcdnLb9hmNkVzaSpNRLqeCj+7hFm558TVdwuLy+Aiomz5QhsBOj/iad6p5mdL1cmbOkL1BmeZAs2978Ly4ZmPQAfjPtzAjefUZOj1w== root@os-controler"
-  - command: packstack --answer-file=/root/packstack-answers.txt
+  - command: packstack --answer-file=/root/packstack-controller-answers.txt
 
 
   # http://docs.openstack.org/trunk/install-guide/install/yum/content/glance-verify.html
