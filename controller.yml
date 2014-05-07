@@ -7,15 +7,14 @@
   vars:
    - files: files/
    - private: private/
-   - endpoint: http://controller:35357/v2.0
 
   vars_files:
    - vars/os.yml
    - vars/ip.yml
 
   tasks:
-#  - name: Set the hostname
-#    action: shell hostname os-controler
+  - name: Set the hostname
+    action: shell hostname controler
 
   - name: install core pkgs
     action: yum state=present pkg={{ item }}
